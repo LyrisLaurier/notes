@@ -89,7 +89,7 @@ echo core >/proc/sys/kernel/core_pattern
 
 执行afl-fuzz后会出现下面的界面，正在进行模糊测试。这是跑了五分钟的结果，可以看到已经有两个crash了。不想跑了就ctrl+c退出
 
-![[Pasted image 20221120095000.png]]
+<img width="560" alt="Pasted image 20221120095000" src="https://user-images.githubusercontent.com/94295495/233818937-d25c9d2f-4c18-40e0-bf53-9ac0b142b7f1.png">
 
 ### afl界面参数说明
 process timing：fuzzing测试的时间消耗
