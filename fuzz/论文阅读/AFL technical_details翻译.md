@@ -24,7 +24,14 @@ shared_mem\[\] 数组是由调用方传递给仪器化二进制文件的 64 kB S
 
 地图的大小被选择为与几乎所有预期目标的2k到10k可发现分支点相碰撞的时候是零散的：
 
-<mark>【45行的表格】</mark>
+| Branch cnt | Colliding tuples | Example targets |
+| ---------- | ---------------- | --------------- |
+| 1,000      | 0.75%            | giflib, lzo     |
+| 2,000      | 1.5%             | zlib, tar, xz   |
+| 5,000      | 3.5%             | libpng, libwebp |
+| 10,000     | 7%               | libxml          |
+| 20,000     | 14%              | sqlite          |
+| 50,000     | 30%              | -               |
 
 同时，其大小足够小，使得接收端能够在微秒内分析地图，并轻松适合L2缓存中。
 
@@ -93,13 +100,26 @@ A -> B -> D -> C -> E (元组：AB、BD、DC和CE)
 
 以下表格比较了使用几种不同方法进行引导模糊测试时，发现文件语法和探索程序状态的相对能力。仪器化目标是使用 `-O3` 编译的 GNU patch 2.7.3，并使用虚拟文本文件进行播种；会话包括对输入队列的单次通过，采用 afl-fuzz：
 
-<mark>【172表格】</mark>
+| Fuzzer guidance strategy used | Blocks reached | Edges reached | Edge hit cnt var | Highest-coverage test case generated |
+| ----------------------------- | -------------- | ------------- | ---------------- | ------------------------------------ |
+| (Initial file)                | 156            | 163           | 1.00             | (none)                               |
+| Blind fuzzing S               | 182            | 205           | 2.23             | First 2 B of RCS diff                |
+| Blind fuzzing L               | 228            | 265           | 2.23             | First 4 B of -c mode diff            |
+| Block coverage                | 855            | 1,130         | 1.57             | Almost-valid RCS diff                |
+| Edge coverage                 | 1,452          | 2,070         | 2.18             | One-chunk -c mode diff               |
+| AFL model                     | 1,765          | 2,597         | 4.99             | Four-chunk -c mode diff              |
 
 第一条 blind fuzzing ("S") 表示只执行一轮测试；第二组数据（“L”）显示模糊测试器在循环中运行，执行的次数与插桩运行的次数相当，这需要更多时间来完全处理不断增长的队列。
 
 在另一个单独的实验中，通过修改模糊测试器以编译掉所有随机模糊测试阶段，并只保留一系列基本的顺序操作，比如翻转位，也得到了类似的结果。由于此模式无法改变输入文件的大小，因此会话从一个有效的统一 diff 开始。
 
-<mark>【188表格】</mark>
+| Queue extension strategy used | Blocks reached | Edges reached | Edge hit cnt var | Number of unique |
+| ----------------------------- | -------------- | ------------- | ---------------- | ---------------- |
+| (Initial file)                | 624            | 717           | 1.00             | -                |
+| Blind fuzzing                 | 1,101          | 1,409         | 1.60             | 0                |
+| Block coverage                | 1,255          | 1,649         | 1.48             | 0                |
+| Edge coverage                 | 1,259          | 1,734         | 1.72             | 0                |
+| AFL model                     | 1,452          | 2,040         | 3.16             | 1                |
 
 正如之前所述，一些基于遗传算法的模糊测试方法依赖于维护单个测试用例并通过进化算法来最大化测试覆盖率。然而，在上述测试中，这种“贪心”方法似乎并没有比盲目模糊测试策略带来实质性的优势。
 
@@ -258,4 +278,3 @@ if (block_address > elf_text_start && block_address < elf_text_end) {
 -   “可疑的校验和或魔术整数（Suspected cksum or magic int）”：一个整数，类似于长度字段的行为，但其数值使得长度解释不太可能。这暗示了校验和或其他“魔法”整数。
 -   “可疑的校验和块（Suspected checksummed block）”：一个长的数据块，其中任何更改总是触发相同的新执行路径。可能是在任何后续解析之前失败校验和或类似完整性检查导致的。
 -   “魔数值部分（Magic value section）”：一种通用令牌，其更改会导致前面概述的二进制行为类型，但不符合任何其他标准。可能是原子比较的关键字等。
-
