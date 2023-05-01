@@ -117,13 +117,44 @@ HTTP Request Smuggling：
 
 [BrakTooth: Causing Havoc on Bluetooth Link Manager via Directed Fuzzing | USENIX](https://www.usenix.org/conference/usenixsecurity22/presentation/garbelini)
 
+## 整体设计
 
+目标有两类
+* Host OS
+* BT SoC Firmware
+
+解耦设计（Decoupling Packet Generation from Fuzzing）：传统的fuzzer需要对通信环境进行建模，包括对数据包的生成和处理等，而BrakTooth的涉及使得可以对目标设备和任意第三方堆栈直接实时进行fuzzing。BT涉及动态协议如LCAP，通信过程中只有上下文可用，因此不能用静态seed。解耦设计将数据包生成和fuzzing分开处理，数据生成可以由第三方协议堆栈来实现（其实就是第三方软件）
+
+BrakTooth 针对关于无线协议的数据包，是用 wireshark 处理的
+
+反馈过程中使用粒子群优化（PSO）来细化变异数据字段的概率
+
+状态映射的算法：
+
+![Pasted image 20230430223212](https://user-images.githubusercontent.com/94295495/235461894-2e954d2c-182e-4dba-af62-c0918dbdf48e.png)
+
+* 为数据包P创建一个状态标签，在Mref中创建s→s'的转换
+* 3-4行解析P，5-13遍历所有layer看是否能匹配上Mu中名字。确定层后13-15行提取相关字段的值和类型，16行生成状态标签
+
+突变：不同状态下针对不同字段进行突变→设置解码树，设置不同层每个字段的突变概率不一样。这些突变概率的调整用到了PSO，从覆盖率的角度去衡量突变概率的有效性
+变异操作：字段变异时用的随机数
+复制：复制的数据包会在不适合的时间节点发送，利用乱序发送使得数据包影响更大，注意洪水问题
+
+监控上直接监视蓝牙片上的系统（SoC），而不是空中架设设备监控
+
+测试过程中一旦发现漏洞或不符合要求，可以通过exploitation框架再现该场景。这个过程利用了TX/RX解剖勾子（TX/RX dissection hooks）注入或改变数据包来实现。
+
+> “Hook”指的是解剖勾子（dissection hooks），它们是一种用于拦截、检查和修改网络数据包的工具。这些勾子可以被添加到网络协议分析器（如Wireshark）中，以便在数据包通过时执行自定义操作。在本文中，利用框架使用TX/RX解剖勾子来注入或改变数据包，以实现漏洞利用。
+
+## 实时fuzzing接口
+
+是针对BT协议来设计的
 
 # Stateful Greybox Fuzzing
 
 [Stateful Greybox Fuzzing | USENIX](https://www.usenix.org/conference/usenixsecurity22/presentation/ba)
 
-
+没有协议规范下发现协议漏洞
 
 # 引用论文
 
