@@ -105,7 +105,9 @@ Cookie: caf_ipaddr=10.116.88.101; country=; city=""; traffic_target=gd; __gsas=I
 
 So, we can get that Alice's friend id is 56. Use the same method, we can get Samy's freind id is 59.
 
-Then, we add a blog. And write: `<img src="http://www.seed-server.com/action/friends/add?friend=59">`. Save it! Or we can use "Embed content" -> "Link", get a title, and set the url "http://www.seed-server.com/action/friends/add?friend=59".
+Then, we add a blog. And write: `<img src="http://www.seed-server.com/action/friends/add?friend=59">`. Save it! Or we can use "Embed content" -> "Link", get a title, and set the url "http://www.seed-server.com/action/friends/add?friend=59". 
+
+We use 'img' before because it automatically triggers an HTTP GET request.
 
 After that, we log out, login Alice,and we can find this blog.If Alice click this img, she will add Samy!
 
@@ -118,3 +120,4 @@ We can check their cookie.For example, we can use these two variable: `__elgg_ts
 
 And we can also check its HTTP Referer.
 
+Use POST instead of GET.
