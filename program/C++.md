@@ -80,14 +80,15 @@ const int& ref = 10; // int temp = 10; const int& ref = temp;
 
 ## 类和对象
 
+### 封装
+
 <u>封装、继承、多态</u>
 
 一个最简单的类以及调用
 
 ```c++
 class Circle{
-    //访问权限
-public:
+public://访问权限
     //属性
     float r;
     //行为
@@ -104,6 +105,54 @@ int main(){
     return 0;
 }
 ```
+
+其中有三种访问权限
+
+* public-公有
+* protected-保护：类内成员可以访问，类外不行；继承中子可以访问父
+* private-私有：类内可以类外不行；继承中子不可以访问父
+
+struct＆class
+
+* struct 默认权限 public
+* class 默认权限 private
+
+一般将成员属性设置为私有：将属性设置为私有，另外设置一些 public 方法进行读/写操作
+
+### 对象的初始化和清理
+
+构造函数： `类名(){}`
+
+* 可以有参数，因此可以重载
+* 没有返回值也不写void
+* 调用对象时自动调用构造，不用手动调用，且只会调用一次。即初始化时就调用
+
+析构函数： `~类名(){}`
+
+* 没返回值也不写void
+* 不可以有参数，也不可以重载
+* 对象销毁前自动调用析构，不用手动调用，且只会调用一次
+
+```C++
+class Person{
+public:
+    Person(){
+        cout << "Person()" << endl;
+    }
+    ~Person(){
+        cout << "~Person()" << endl;
+    }
+};
+
+int main() {
+    Person p; //Person()和~Person()都输出
+    return 0;
+}
+```
+
+> 都调用的原因是，p是栈上数据，自动释放后会调用析构
+
+有参/无参构造、普通/拷贝构造
 
 
 
