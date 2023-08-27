@@ -152,7 +152,72 @@ int main() {
 
 > 都调用的原因是，p是栈上数据，自动释放后会调用析构
 
-有参/无参构造、普通/拷贝构造
+分类
 
+* 有参/无参构造
+* 普通/拷贝构造
 
+构造函数
+
+```c++
+class Person{
+public:
+    int age;
+    //无参构造
+    Person(){ 
+        cout << "Person()" << endl;
+    }
+    //有参构造
+    Person(int a){ 
+        cout << a << endl;
+    }
+    //拷贝构造
+    Person(const Person &p){ 
+        age = p.age;
+    }
+};
+
+int main() {
+    Person p;
+    p.age = 10;
+    Person p1(p); //Person p1 = Person(p)
+    cout << "p1.age:" << p1.age << endl;
+    return 0;
+}
+```
+
+构造函数调用
+
+* 括号：
+
+  ```C++
+  Person p; //Person p()不行,不能创建对象,会被认为是一个函数声明
+  Person p1(10);
+  //Person p2(p1)不行,会等价于Person p2
+  ```
+
+  <u>针对调用默认构造时不能加括号；不要用拷贝构造函数初始化匿名对象</u> 
+
+* 显示：
+
+  ```C++
+  Person p;
+  Person p1 = Person(10); //有参构造
+  Person p2 = Person(p2); //拷贝构造
+  ```
+
+* 隐式转换：
+
+  ```C++
+  Person p4 = 10; //Person p4 = Person(10)
+  Person p5 = p4;
+  ```
+
+匿名对象：当前行结束就销毁（执行析构）。
+
+拷贝构造函数调用
+
+* 使用一个已经创建完的对象来初始化一个新对象
+* 值传递的方式给函数参数传值
+* 以值的方式返回局部对象
 
