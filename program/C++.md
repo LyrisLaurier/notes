@@ -119,7 +119,9 @@ struct＆class
 
 一般将成员属性设置为私有：将属性设置为私有，另外设置一些 public 方法进行读/写操作
 
-### 对象的初始化和清理
+### 构造函数&析构函数
+
+#### 构造函数
 
 构造函数： `类名(){}`
 
@@ -132,6 +134,12 @@ struct＆class
 * 没返回值也不写void
 * 不可以有参数，也不可以重载
 * 对象销毁前自动调用析构，不用手动调用，且只会调用一次
+
+调用规则：编译器默认提供三个函数。自定义有参构造函数后，不再提供默认无参构造；自定义拷贝构造后，不再提供默认的其他构造函数
+
+* 默认构造：空实现
+* 析构函数：空实现
+* 拷贝构造：值拷贝
 
 ```C++
 class Person{
@@ -215,9 +223,200 @@ int main() {
 
 匿名对象：当前行结束就销毁（执行析构）。
 
+#### 初始化列表
+
+传统的初始化，声明变量后通过构造函数传入参数、赋值可以进行初始化
+
+```C++
+class Test{
+public:
+	int m_a;
+	int m_b;
+	int m_c;
+
+	//传统方式
+    Test(int a, int b, int c){
+		m_a = a;
+		m_b = b;
+		m_c = c;
+	}
+
+	//初始化列表
+    Test(int a, int b, int c):m_a(a),m_b(b),m_c(c){
+	}
+};
+```
+
+#### 拷贝构造函数
+
 拷贝构造函数调用
 
 * 使用一个已经创建完的对象来初始化一个新对象
+
+  ```C++
+  Person p1(10);
+  Person p2(p1);
+  ```
+
 * 值传递的方式给函数参数传值
-* 以值的方式返回局部对象
+
+  ```C++
+  void test_person(Person p){
+  	cout << "test_person()" << endl;
+  }
+  int main()
+  {
+  	Person p;
+  	test_person(p); //值传递,这里拷贝了
+  	return 0;
+  }
+  ```
+
+* ~~以值的方式返回局部对象~~：已经被优化了
+
+  ```C++
+  Person test2(){
+  	Person p1(5);
+  	cout << (int*)&p1 << endl;
+  	return p1;
+  }
+  
+  int main()
+  {
+  	Person p = test2();
+  	cout << (int*)&p << endl;
+  	return 0;
+  }
+  ```
+
+  > ~~这里存疑，视频里说是值传递，本地运行出来是整个对象传递~~
+  >
+  > 已解决，[C++ 函数返回对象时并没有调用拷贝构造函数_shang_ch的博客-CSDN博客](https://blog.csdn.net/nbu_dahe/article/details/119142610) 中有解释：其原因是 RVO（return value optimization），被G++进行值返回的优化了，可以对g++增加选项 `-fno-elide-constructors` 将RVO优化关闭
+
+#### 深拷贝&浅拷贝
+
+浅拷贝：简单的赋值拷贝；编译器提供的拷贝构造函数就是钱拷贝
+
+深拷贝：在堆区重新申请空间进行拷贝操作
+
+浅拷贝：
+
+```C++
+class Person
+{
+public:
+	int age=18;
+	int* n;
+
+	Person(int a, int number)
+	{
+		cout << "Person(int a)" << endl;
+		age = a;
+		n = new int(number); //开到堆区
+	}
+};
+
+int main()
+{
+	Person p1(19,2);
+	Person p2(p1);
+	p1.age = 20;
+	*p1.n = 3;
+	cout << "p1.age:" << p1.age << "; p1.n:" << *p1.n << endl; //p1.age:20; p1.n:3
+	cout << "p2.age:" << p2.age << "; p2.n:" << *p2.n << endl; //p2.age:19; p2.n:3
+	return 0;
+}
+```
+
+* 这里面 age、n 属性都进行浅拷贝，p2.n 会随着 p1.n 改变，查地址可以看到这两个 n 是一个地址
+
+> 有创建堆区，就要记得用析构释放堆区，但是浅拷贝释放堆区空间时会出现问题
+
+```C++
+~Person()
+{
+    if (n != NULL){
+        delete n;
+        n = NULL; //防止野指针出现,做置空
+    }
+    cout << "~Person" << endl;
+}
+```
+
+* p2 释放一次 n 的堆区，p1 再释放一次就重复了 → 深拷贝解决
+
+深拷贝：这样 p1 的修改就不会影响 p2 的值（指针保存的内容）
+
+```C++
+Person(const Person &p)
+{
+    cout << "Person(const Person &p)" << endl;
+    age = p.age; //浅拷贝
+    n = new int (*p.n); //深拷贝
+}
+int main()
+{
+	Person p1(19,2);
+	Person p2(p1);
+	p1.age = 20;
+	*p1.n = 3;
+	cout << "p1.age:" << p1.age << "; p1.n:" << *p1.n << endl; //p1.age:20; p1.n:3      
+	cout << "p2.age:" << p2.age << "; p2.n:" << *p2.n << endl; //p2.age:19; p2.n:2 
+	return 0;
+}
+```
+
+也就是，<u>如果有开辟堆区数据，就要自己写拷贝函数实现深拷贝，防止出问题</u>
+
+#### 对象成员
+
+C++ 中允许类的成员是另一个类对象，即对象成员
+
+```C++
+class A {}
+class B {
+    A a;
+}
+```
+
+```C++
+class Test{
+public:
+	int m_a;
+	Person m_p;
+	Test(int a, Person p): m_a(a), m_p(p) {
+	}
+};
+
+int main()
+{
+	Person p(18,1);
+	Test t(5,p);
+	cout << "m_a:" << t.m_a << endl;
+	cout << "m_p.age:" << t.m_p.age << endl;
+	cout << "m_p.n:" << *t.m_p.n << endl;
+	return 0;
+}
+```
+
+* 构造函数中会先创建 Person 再创建 Test，析构函数顺序相反
+
+#### static
+
+静态成员变量
+
+* 所有对象共享一份数据
+* 编译阶段分配内存
+* 类内声明，类外初始化
+
+静态成员函数
+
+* 所有对象共享一个函数
+* 静态成员函数只能访问静态成员变量
+
+
+
+
+
+
 
