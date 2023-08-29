@@ -405,18 +405,50 @@ int main()
 
 静态成员变量
 
-* 所有对象共享一份数据
+* 所有对象共享一份数据。可以更改，只是一改就全改了
+
+  ```C++
+  Person p1;
+  Person p2;
+  p2.a = 20;
+  cout << p1.a << endl; //p1.a = p2.a都被改了
+  ```
+
 * 编译阶段分配内存
+
 * 类内声明，类外初始化
+
+  ```C++
+  class Person{
+  public:
+  	static int a;
+  };
+  int Person::a = 10; //int a就成全局变量了,用::限制作用域
+  ```
+
+静态成员变量还可以通过类名访问： `cout << Person::a << endl;` ，当然如果是 private 就访问不到了
 
 静态成员函数
 
 * 所有对象共享一个函数
 * 静态成员函数只能访问静态成员变量
 
+静态成员函数也可以通过对象、类名访问
 
+```C++
+class Person{
+public:
+	static void func(){
+	cout << "static void func()" << endl;
+	}
+};
 
-
-
-
+int main()
+{
+	Person p1;
+	p1.func();
+	Person::func();
+	return 0;
+}
+```
 
