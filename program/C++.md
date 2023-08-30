@@ -452,3 +452,76 @@ int main()
 }
 ```
 
+存储
+
+* 空对象占用1内存，是为区分对象占内存的位置。只要不空了，不会平白无故占字节的
+
+* 静态成员变量不计入上面的 sizeof 计算内存，他不属于类的对象上
+
+* 成员函数和成员变量分开存储的，所以也没算进去，不属于类的对象上
+
+  ```C++
+  class Person{ //空时为1
+      int a; //4
+      static int b; //0
+      void func(){} //0
+      static void func1(){} //0
+  };
+  ```
+
+c++ 提供的一个特殊的对象指针 this 指针，this 指针指向被调用的成员函数所属的对象，它隐含在每个非静态成员函数内，不用自己定义
+
+用途
+
+* 形参与成员变量重名时用 this 区分
+
+  ```C++
+  class Person{
+  public:
+      int a;
+      Person(int a){
+          this -> a = a;
+      };
+  };
+  int main(){
+      Person p(1);
+      cout << p.a << endl;
+      return 0;
+  }
+  ```
+
+* 类的非静态成员函数中返回对象本身可以用 `return *this` 
+
+  ```C++
+  class Person{
+  public:
+      int a;
+      Person(int a){
+          this->a = a;
+      };
+      Person& addSelf(Person &p){
+          this -> a += p.a;
+          return *this;
+      }
+  };
+  
+  int main(){
+      Person p1(10);
+      Person p2(1);
+      p2.addSelf(p1).addSelf(p1).addSelf(p1); //这样返回就是对象,可以累积使用,即链式编程
+      cout << p2.a << endl;
+      cout << "end" << endl;
+      return 0;
+  }
+  ```
+
+  如果返回不是 `Person&` 而是 `Person`，则只加了一次10，因为返回时调用了拷贝构造函数而不是p2本体了
+
+  ```C++
+  //返回是Person不是Person&时
+  cout << p2.addSelf(p1).addSelf(p1).a << endl; //p2+p1+p1
+  p2.addSelf(p1).addSelf(p1).addSelf(p1);
+  cout << p2.a << endl; //p2+p1,后面加的两次没用
+  ```
+
+
