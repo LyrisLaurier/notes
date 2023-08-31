@@ -579,6 +579,54 @@ int main()
 实现
 
 * 全局函数做友元
+
 * 类做友元
+
+  ```C++
+  class Test1{
+  public:
+      friend class Test2;
+      int m_a;
+  private:
+      int m_b;
+  };
+  
+  class Test2{
+  public:
+      void test(){
+          Test1 t;
+          t.m_b = 1; //前面加上friend那行就访问成功了
+      }
+  };
+  ```
+
 * 成员函数做友元
+
+  ```C++
+  class Test2{
+  public:
+      void test();
+  };
+  
+  class Test1{
+  public:
+      friend void Test2::test();
+      int m_a;
+  private:
+      int m_b;
+  };
+  
+  void Test2::test(){
+      Test1 t;
+      t.m_b = 1;
+  }
+  ```
+
+可以类外写函数 `类名::函数名` ，在类外实现
+
+```C++
+Test1::test1(){
+    ...
+}
+```
 
