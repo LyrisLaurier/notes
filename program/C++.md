@@ -1,6 +1,6 @@
 > 基础直接跳过，从P84开始看，也就是面向对象部分：[01 程序的内存模型-内存四区-代码区._哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1et411b73Z?p=84&vd_source=8e66d0be2e227fad85c74192f79799d6) 
 
-# 核心编程
+# 面向对象编程
 
 ## new/delete
 
@@ -1112,18 +1112,302 @@ Animal::~Animal() {
 写文件流程：
 
 * 包含头文件
+
 * 创建流对象 `ofstream ofs` 
-* 打开文件 `ops.open("路径",打开方式)` 
+
+* 打开文件 `ofs.open("路径",打开方式)` 
+
 * 写数据 `ofs << "写入的内容"` 
+
 * 关闭文件 `ofs.cloes()` 
 
+  ```C++
+  int main()
+  {
+  	ofstream ofs;
+  	ofs.open("1.txt",ios::out); //相对路径,同级目录
+  	ofs << "123456";
+  	ofs.close();
+  	return 0;
+  }
+  ```
 
+打开方式：通过 `|` 可以同时用两种方式
 
+| 打开方式    | 解释                     |
+| ----------- | ------------------------ |
+| ios::in     | 读文件                   |
+| ios::out    | 写文件                   |
+| ios::ate    | 初始位置：文件尾         |
+| ios::app    | 追加方式写文件           |
+| ios::trunc  | 如果文件存在先删除再创建 |
+| ios::binary | 二进制方式               |
 
+读文件流程
 
+* 包含头文件
 
+* 创建流对象 `ifstream ifs` 
 
+* 打开文件判断文件是否打开成功 `ifs.open("路径",打开方式)` 、`ifs.is_open()`
 
+* 读数据有四种方式读取
+
+* 关闭文件 `ifs.cloes()` 
+
+  ```C++
+  int main()
+  {
+  	ifstream ifs;
+  	ifs.open("2.txt",ios::in);
+  	if (!ifs.is_open())
+  	{
+  		cout << "failed" << endl;
+  		return 0;
+  	}
+  	
+  	//方法1
+  	char buf[100] = {0};
+  	while (ifs >> buf)
+  	{
+  		cout << buf << endl; //endl去补被打断的换行
+  	}
+  
+  	//方法2
+  	while (ifs.getline(buf,sizeof(buf)))
+  	{
+  		cout << buf << endl;
+  	}
+  	
+  	//方法3
+  	string str;
+  	while (getline(ifs,str)) //全局的getline函数
+  	{
+  		cout << str << endl;
+  	}
+  	
+  	//方法4 不推荐
+  	char c;
+  	while ((c = ifs.get()) != EOF) //逐字符读,EOF文件尾
+  	{
+  		cout << c;
+  	
+  	ifs.close();
+  	return 0;
+  }
+  ```
+
+### 二进制文件
+
+写二进制：利用流对象调用成员函数write `ostream& write(consat char * buffer, int len);`
+
+```C++
+class Person{
+public:
+	char m_name[64];
+	int m_age;
+};
+
+int main()
+{
+	ofstream ofs;
+	ofs.open("1.txt",ios::out | ios::binary);
+	Person p = {"Alice", 18};
+	ofs.write((const char*)&p,sizeof(Person));
+	ofs.close();
+	return 0;
+}
+```
+
+读二进制：用read
+
+```C++
+int main()
+{
+	ifstream ifs;
+	ifs.open("1.txt",ios::in | ios::binary);
+	if (!ifs.is_open())
+	{
+		cout << "failed" << endl;
+		return 0;
+	}
+	Person p;
+	ifs.read((char *)&p, sizeof(Person)); //返回一个地址,用p接收还要强制类型转换成char*
+	cout << p.m_name << "," << p.m_age << endl;
+	ifs.close();
+	return 0;
+}
+```
+
+# 泛型编程和STL
+
+## 模板
+
+两种模板机制：函数模板、类模板
+
+### 函数模板
+
+模板提高代码的复用性
+
+建立一个通用函数，返回值类型和形参类型可以补定义，用一个虚构的类型代表
+
+```C++
+template<typename T> //typename也可以用class
+void tSwap(T &a, T &b){
+	T tmp =a;
+	a = b;
+	b = tmp;
+}
+int main()
+{
+	int a = 1;
+	int b = 2;
+	tSwap(a, b); //1.自动类型推导
+	tSwap<int>(a, b); //2.显示指定类型,int指定的是T类型
+	cout << a << "," << b << endl;
+	return 0;
+}
+```
+
+两种使用方式
+
+* 自动类型推导：必须推导出一致的数据类型T
+
+* 显示指定类型
+
+* 模板必须有确定出T的数据类型才能执行
+
+  ```C++
+  template<typename T> //typename也可以用class
+  void func(){
+  	cout << "func()" << endl;
+  } //这样在调用func()时就会报错,可以显示指定func<int>()
+  ```
+
+> 不知道为什么，`template<typename T>` 这样写一个文件里不能出现两次，换成 `template<class T>` 就没事
+
+普通函数与函数模板区别
+
+* 普通函数可以发生自动类型转换（隐式类型转换）
+
+  ```C++
+  int testAdd(int a, int b){
+  	return a+b;
+  }
+  ... ...
+  cout << testAdd(10, 'a') << endl; //107
+  ```
+
+* 调用函数模板，如果用自动类型推到，则不发生隐式类型转换
+
+  ```C++
+  template<class T>
+  T testAdd2(T a, T b){
+  	return a+b;
+  }
+  ... ...
+  cout << testAdd2(10, 'a') << endl; //报错
+  ```
+
+* 如果用显示指定类型，可以发生隐式类型转换
+
+  ```C++
+  cout << testAdd2<int>(10, 'a') << endl; //107
+  ```
+
+普通函数和函数模板之间可以发生重载
+
+调用规则
+
+* 如果普通函数和函数模板都可以实现，优先普通函数
+
+  ```C++
+  void myPrint(int a, int b){
+  	cout << "void myPrint(int a, int b)" << endl;
+  }
+  template<class T>
+  void myPrint(T a, T b){
+  	cout << "template: void myPrint(T a, T b)" << endl;
+  }
+  ... ...
+  myPrint(1,2); //执行普通函数
+  ```
+
+* 可通过空模板参数列表参数来强制调用函数模板
+
+  ```C++
+  myPrint<>(1,2); //执行模板函数
+  ```
+
+* 函数模板也可以重载
+
+* 如果函数模板可以产生更好的匹配，则优先函数模板
+
+  ```C++
+  myPrint('a','b'); //执行模板函数
+  ```
+
+  虽然可以char转换成int使用普通函数，但是函数模板更合适
+
+模板有局限性：比如 `T a` 这样传参如果传的是一个数组就没法处理了，传一个类也会有问题。因此模板为这些特定的数据类型提供具体化操作
+
+```C++
+template<class T>
+int compare(T &a, T &b){
+	return a==b;
+}
+
+int main()
+{
+	int a = 1;
+	int b = 2;
+	cout << compare(a, b) << endl; //可以运行
+
+	Person p1 = Person("Alice",18);
+	Person p2 = Person("Bob",20);
+	cout << compare(p1, p2) << endl; //报错
+
+	return 0;
+}
+```
+
+比如做基本运算的一个模板函数，如果对类是无法操作的，一种解决办法是重载运算符号，一种是具体化操作
+
+```C++
+template<> int compare(Person &p1, Person &p2){ //用template表名这是重载的函数
+	return (p1.m_name==p2.m_name) && (p1.m_age == p2.m_age);
+} //compare(p1, p2)这样就不报错了
+```
+
+> 一般不自己写，用STL中的模板
+
+### 类模板
+
+```C++
+template<class NameType, class AgeType>
+class Person{
+public:
+	Person(NameType name, AgeType age): m_name(name), m_age(age) {}
+	void showPerson(){
+		cout << "name:" << m_name << endl;
+		cout << "age:" << m_age << endl;
+	}
+	AgeType m_age;
+	NameType m_name;
+};
+
+int main()
+{ 
+	Person<string,int> p1("alice",18);
+	p1.showPerson();
+	return 0;
+}
+```
+
+类模板与函数模板
+
+* 类模板没有自动类型推导的使用方式
+* 类模板在模板参数列表中可以有默认参数
 
 
 
@@ -1134,4 +1418,3 @@ Animal::~Animal() {
 
 
 # 最后
-
