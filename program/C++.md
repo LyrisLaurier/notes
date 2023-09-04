@@ -580,6 +580,22 @@ int main()
 
 * 全局函数做友元
 
+  ```C++
+  void test1();
+  
+  class Test1{
+  public:
+      friend void test1();
+  private:
+      int m_b;
+  };
+  
+  void test1(){
+      Test1 t;
+      t.m_b = 1;
+  }
+  ```
+
 * 类做友元
 
   ```C++
@@ -629,4 +645,493 @@ Test1::test1(){
     ...
 }
 ```
+
+### 运算符重载
+
+加法：`+`
+
+* 可以通过成员函数，也可以通过全局函数
+
+    ```C++
+    class Test1{
+    public:
+        int m_a;
+        //通过成员函数
+        //使用引用类型调用可以避免拷贝,节省空间时间,直接传对象也能实现
+        Test1 operator+(const Test1 &t){ //Test1 operator+(Test1 t)
+            Test1 temp;
+            temp.m_a = this->m_a + t.m_a;
+            return temp;
+        }
+    };
+
+    //通过全局函数
+    Test1 operator+(Test1 &t1, Test1 &t2) {
+        Test1 temp;
+        temp.m_a = t1.m_a + t2.m_a;
+        return temp;
+    }
+
+    int main(){
+        Test1 t1;
+        t1.m_a = 1;
+        Test1 t2;
+        t2.m_a = 11;
+        Test1 t3 = t1 + t2;
+        cout << t3.m_a << endl;
+        return 0;
+    }
+    ```
+
+* 重载仅限于自定义数据类型，比如类相加，对于内置的数据类型比如 int 相加这种不能修改
+
+左移：`<<`
+
+* 通常不用成员函数重载 <<
+
+  ```C++
+  Test1 operator<<(cout) //p.operator(cout)简化是p << cout,但是要cout << p无法实现
+  ```
+
+* 只能用全局函数
+
+  ```C++
+  ostream& operator<<(ostream &cout, Test1 &t){ //cout是输出流对象,且是全局的只能通过引用调用
+      cout << t.m_a ;
+      return cout;
+  } //cout可以改名,引用就是起别名,起啥都行
+  
+  int main(){
+      Test1 t1;
+      t1.m_a = 1;
+      cout << t1 << endl; //如果函数返回是void就不能继续链式引用加endl换行了
+      cout << "end" << endl;
+      return 0;
+  }
+  ```
+
+综合使用，通常设置成 private 属性，设置全局函数友元实现操作，赋值可以通过 publi c方法
+
+递增：`++`
+
+```C++
+class TestInt{
+public:
+    TestInt(){
+        m_n = 0;
+    }
+    // 前置
+    // 返回引用是为了一直对一个对象进行操作,++(++t)这样就是加两次,不用引用第二次累加就成对新对象的操作
+    TestInt& operator++(){
+        m_n++;
+        return *this;
+    }
+    // 后置
+    TestInt& operator++(int){ // int做占位参数用于区分重定义的函数
+        TestInt temp = *this;
+        m_n++;
+        return temp;
+    }
+    int m_n;
+};
+
+int main(){
+    TestInt t;
+    ++(++t);
+    t++;
+    return 0;
+}
+```
+
+递减同理，加号变成减号即可
+
+赋值运算符：
+
+* 注意深浅拷贝影响到的，释放堆区内存时重复的问题
+
+  ```C++
+  class Person{
+  public:
+      Person(int age){
+          m_age = new int(age); // 开到堆区
+      }
+      Person& operator=(Person &p){
+          //编译器默认提供的是浅拷贝m_age=p.m_age;
+          //先判断是否在堆区有属性,有就先释放后进行深拷贝
+          if(m_age != NULL){
+              delete m_age;
+              m_age = NULL;
+          }
+          m_age = new int(*p.m_age);
+          return *this;
+      }
+      int *m_age;
+  };
+  
+  int main(){
+      Person p1(18);
+      Person p2(20);
+      p2 = p1;
+      cout << p1.m_age << ":" << *p1.m_age << endl;
+      cout << p2.m_age << ":" << *p2.m_age << endl;
+      return 0;
+  }
+  ```
+
+关系运算符重载：`==` 和 `!=` 同理
+
+```C++
+bool operator==(Person p){
+    if (this->m_age == p.m_age)
+        return true;
+    else
+        return false;
+}
+```
+
+函数调用运算重载：
+
+* 由于使用起来很像函数，也叫仿函数；很灵活没有固定写法
+
+  ```C++
+  class TestPrint{
+  public:
+      void operator()(string test){
+          cout << test << endl;
+      }
+  };
+  
+  int main(){
+      TestPrint t;
+      t("hello");
+      return 0;
+  }
+  ```
+
+* 匿名函数对象 `TestPrint()("hello");`
+
+### 继承
+
+#### 单继承
+
+子类也叫派生类，父类也叫基类。继承能减少重复代码
+
+继承方式
+
+* 公共继承：`class 子类:public 父类 {};` 
+
+  ```C++
+  class A{
+  public:
+      int a;
+  private:
+      int b;
+  protected:
+      int c;
+  };
+  
+  class B: public A{
+  public:
+      int a;
+  protected:
+      int b;
+  private:
+      //不可访问int c;
+  };
+  ```
+
+* 保护继承
+
+  ```C++
+  class C: protected A{
+  protected:
+      int a;
+      int b;
+  private:
+      //不可访问int c;
+  };
+  ```
+
+* 私有继承
+
+  ```C++
+  class D: private A{
+  private:
+      int a;
+      int b;
+      //不可访问int c;
+  };
+  ```
+
+  简单讲就是子类可以缩小权限不可以扩大；虽然 private 权限不能访问，但是继承下来，有占空间
+
+构造和析构函数顺序：父类构造→子类构造→子类析构→子类构造
+
+父类子类中的同名成员访问：属性和函数同理
+
+* 可直接访问子类中的
+
+* 访问父类中的要加作用域
+
+  ```C++
+  s.m_age; //子类
+  s.Person::m_age; //父类
+  ```
+
+* <u>如果子类与父类有同名函数，则子类的同名函数会隐藏掉父类中所有的同名函数，所以哪怕父类有多个同名函数（发生函数重载），子类也没办法直接调用（比如参数不一样的同名的父与子类的函数），要依靠作用域</u>
+
+静态成员的继承和非静态的一致
+
+#### 多继承
+
+```C++
+class Base1{
+public:
+    Base1(int a): m_a(a) {}
+    int m_a;
+};
+
+class Base2{
+public:
+    Base2(int b): m_b(b) {}
+    int m_b;
+};
+
+class Test: public Base1, public Base2{
+	... ...
+};
+```
+
+父类中出现同名时，要标明作用域
+
+#### 菱形继承
+
+```mermaid
+graph BT
+	D --> B --> A
+	D --> C --> A
+```
+
+D对象访问A中声明的成员时会发生二义性，不知道从B还是C中获取，因此要作用域才能区分。但是这样有两份作用域，只需要一份数据
+
+解决：虚继承 virtual
+
+```C++
+class Base{
+public:
+    int m_Base;
+};
+
+class Base1: virtual public Base {};
+
+class Base2: virtual public Base {};
+
+class Test: public Base1, public Base2 {};
+
+int main(){
+    Test t;
+    t.m_Base = 9;
+    cout << t.m_Base << endl;
+    return 0;
+}
+```
+
+### 多态
+
+#### 简单使用
+
+多态
+
+* 静态多态：函数重载、运算符重载，复用函数名
+* 动态多态：派生类和虚函数实现运行时多态
+* 区别：静态多态的函数地址早绑定，编译阶段确定函数地址；动态的晚绑定，运行时确定
+
+类型转换：允许类型转换
+
+地址早绑定
+
+```C++
+class Animal{
+public:
+    void speak(){
+        cout << "spaek()" << endl;
+    }
+};
+
+class Cat: public Animal{
+public:
+    void speak(){
+        cout << "cat:spaek()" << endl;
+    }
+};
+
+void test(Animal& a){
+    a.speak();
+}
+
+int main(){
+    Cat c;
+    test(c);
+    return 0;
+}
+```
+
+通过虚函数实现晚绑定
+
+```C++
+class Animal{
+public:
+    virtual void speak(){... ...} //这样执行test(c)就是Cat.speak()在执行
+};
+
+class Cat: public Animal{... ...};
+
+void test(Animal& a){
+    a.speak();
+}
+```
+
+根据传入对象的不同执行不同地址的函数
+
+动态多态条件
+
+* 有继承关系
+* 子类重写（不是重载）父类的虚函数。比如父类函数无法满足子类要求时需要在子类中重写
+* 使用：父类指针指向子类对象
+
+#### 原理
+
+`sizeof(Animal)` 为8：是一个指针的大小，虚函数本质就是指针
+
+有一个虚函数指针 vfptr 指向虚函数表 vftable，vftable 中有记录虚函数的地址
+
+如果没发生重写，子类继承这个指针以及虚函数表。发生重写后，会对其虚函数表进行覆盖，替换成该子类的虚函数地址。当父类指针或者引用指向子类时，就发生了多态
+
+#### 纯虚函数和抽象类
+
+多态中父类中的虚函数通常没用意义，一般调用子类重写的内容，因此把虚函数称为纯虚函数，纯虚函数就不用写实现了。当类中有了纯虚函数，该类称为抽象类
+
+```C++
+class Animal{
+public:
+    virtual void speak() = 0;
+};
+```
+
+抽象类
+
+* 无法实列化对象：`Animal a` 会报错
+* 抽象类的子类必须重写父类中的纯虚函数
+
+#### 虚析构和纯虚析构
+
+多态中有个问题，子类中有堆区数据的话，父类指针在释放时无法调用子类的析构代码，需要虚析构/纯虚析构。
+
+虚析构与纯虚析构
+
+* 需要有具体的函数实现
+* 纯虚析构则该类是抽象类，无法实例化对象
+
+父类指针析构时不会调用子类的析构函数，导致如果子类有堆区数据会有内存泄露→改成虚析构
+
+```C++
+class Animal{
+public:
+    Animal(){
+        cout << "Animal()" << endl;
+    }
+    virtual ~Animal(){ //虚析构,不加virtual会导致不执行Animal的析构函数
+        cout << "~Animal()" << endl;
+    }
+    virtual void speak() = 0;
+};
+
+class Cat: public Animal{
+public:
+    Cat(string name){
+        cout << "Cat()" << endl;
+        m_name = new string(name); //堆区数据
+    }
+    virtual void speak(){
+        cout << *m_name <<":cat:spaek()" << endl;
+    }
+    ~Cat(){ //释放堆区
+        if(m_name != NULL){
+            cout << "~Cat()" << endl;
+            delete m_name;
+            m_name = NULL;
+        }
+    }
+    string *m_name;
+};
+
+int main(){
+    Animal* a = new Cat("Tom");
+    a->speak(); //执行Cat::~spaek()
+    delete a;
+    return 0;
+}
+```
+
+纯虚析构：
+
+* 纯虚析构要在类外实现，需要声明也需要实现
+* 与纯虚函数不一样，纯虚函数不需要类外实现
+* 有纯虚析构也是抽象类，无法实例化对象
+
+```C++
+class Animal{
+public:
+    Animal(){
+        cout << "Animal()" << endl;
+    }
+    virtual ~Animal() = 0;
+    virtual void speak() = 0;
+};
+
+Animal::~Animal() {
+    cout << "~Animal()" << endl;
+}
+```
+
+## 文件操作
+
+需要包含文件流 `#include <fstream>`
+
+* 写 `ofstram` 
+* 读 `ifstream` 
+* 读写 `fstream` 
+
+对文件操作有
+
+* 文本文件：ASCII码存储
+* 二进制文件：二进制存储
+
+### 文本文件
+
+写文件流程：
+
+* 包含头文件
+* 创建流对象 `ofstream ofs` 
+* 打开文件 `ops.open("路径",打开方式)` 
+* 写数据 `ofs << "写入的内容"` 
+* 关闭文件 `ofs.cloes()` 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# 最后
 
