@@ -1407,7 +1407,67 @@ int main()
 类模板与函数模板
 
 * 类模板没有自动类型推导的使用方式
+
+  ```C++
+  Person p1("alice",18); //报错
+  ```
+
 * 类模板在模板参数列表中可以有默认参数
+
+  ```C++
+  template<class NameType, class AgeType = int>
+  ... ...
+  Person<string> p1("alice",18); //就可以省去int了
+  ```
+
+类模板中的成员函数
+
+* 普通的类中的成员函数一开始就可以创建
+* 类模板中的在调用时才创建
+
+类模板做函数参数
+
+* 直接传入，也是最常用的
+
+  ```C++
+  void test(Person<string,int> &p){
+  	p.showPerson();
+  }
+  int main()
+  { 
+  	Person<string,int> p("alice",18);
+  	test(p);
+  	return 0;
+  }
+  ```
+
+* 参数模板化
+
+  ```C++
+  template<class T1,class T2>
+  void test(Person<T1,T2> &p){
+  	p.showPerson();
+  } //test(p)调用方式不变
+  ```
+
+* 整个类模板化
+
+  ```C++
+  template<class T>
+  void test(T &p){
+  	p.showPerson(); //可以通过typeid(T).name()查看数据类型
+  }
+  ```
+
+类模板的继承
+
+* 父类是模板时，子类声明时要标出父类中T的类型
+* 不指定则无法给子类分配内存
+* 如果想灵活指定父类T的类型，子类也得是模板
+
+
+
+
 
 
 
