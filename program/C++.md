@@ -1247,6 +1247,8 @@ int main()
 
 ### 函数模板
 
+#### 使用方式
+
 模板提高代码的复用性
 
 建立一个通用函数，返回值类型和形参类型可以补定义，用一个虚构的类型代表
@@ -1285,6 +1287,8 @@ int main()
   ```
 
 > 不知道为什么，`template<typename T>` 这样写一个文件里不能出现两次，换成 `template<class T>` 就没事
+
+#### 普通函数与函数模板
 
 普通函数与函数模板区别
 
@@ -1349,6 +1353,8 @@ int main()
 
   虽然可以char转换成int使用普通函数，但是函数模板更合适
 
+#### 类做参数
+
 模板有局限性：比如 `T a` 这样传参如果传的是一个数组就没法处理了，传一个类也会有问题。因此模板为这些特定的数据类型提供具体化操作
 
 ```C++
@@ -1382,6 +1388,8 @@ template<> int compare(Person &p1, Person &p2){ //用template表名这是重载�
 > 一般不自己写，用STL中的模板
 
 ### 类模板
+
+#### 使用
 
 ```C++
 template<class NameType, class AgeType>
@@ -1425,6 +1433,8 @@ int main()
 * 普通的类中的成员函数一开始就可以创建
 * 类模板中的在调用时才创建
 
+#### 类做参数
+
 类模板做函数参数
 
 * 直接传入，也是最常用的
@@ -1459,16 +1469,153 @@ int main()
   }
   ```
 
+#### 继承
+
 类模板的继承
 
 * 父类是模板时，子类声明时要标出父类中T的类型
+
+  ```C++
+  template<class T>
+  class Base{
+      T m;
+  };
+  class Son: public Base<int> {};
+  ```
+
 * 不指定则无法给子类分配内存
+
 * 如果想灵活指定父类T的类型，子类也得是模板
 
+  ```C++
+  template<class T>
+  class Base{
+  public:
+      T m_char;
+  };
+  
+  template<class T1, class T2>
+  class Son: public Base<T2> {
+  public:
+      T1 m_int;
+  };
+  ```
 
+#### 类外实现
 
+类模板中成员函数的类外实现
 
+* 构造函数
 
+  ```C++
+  //类内只声明不实现
+  Person(T1 name, T2 age);
+  //类外实现,注意也要用模板
+  template<class T1, class T2>
+  Person<T1, T2>::Person(T1 name, T2 age): m_name(name), m_age(age) {}
+  ```
+
+* 成员函数，同理
+
+  ```C++
+  //void showPerson();
+  template<class T1, class T2>
+  void Person<T1,T2>::showPerson(){
+      cout << "name:" << m_name << ",m_age" << m_age << endl;
+  }
+  ```
+
+类模板分文件编写
+
+* 直接包含 `.cpp` 文件：写一个 .h 文件里声明Person 类，再另写一个cpp文件里面写 Person 类实现，然后 `#include "test1.cpp"` 包含一下就可以正常调用。但是一般都包含 .h 所以不这么干
+
+  ```C++
+  Person<string,int> p("Alice",18);//person.h 定义Person类
+  #include <iostream>
+  using namespace std;
+  template<class T1, class T2>
+  class Person{
+  public:
+      Person(T1 name, T2 age);
+      void showPerson();
+      T1 m_name;
+      T2 m_age;
+  };
+  
+  //test1.cpp 记得删main函数,文件外实现
+  #include "person.h"
+  template<class T1, class T2>
+  Person<T1, T2>::Person(T1 name, T2 age): m_name(name), m_age(age) {}
+  template<class T1, class T2>
+  void Person<T1,T2>::showPerson(){
+      cout << "name:" << m_name << ",m_age" << m_age << endl;
+  }
+  
+  //调用正常
+  #include "test1.cpp"
+  ... ...
+  Person<string,int> p("Alice",18);
+  ```
+
+* 声明和实现写到一个文件里，后缀为 `.hpp` （一般是，不强制要求为hpp文件）：直接把 .h 和 test1.cpp 中的内容，即类的创建和实现都写到一起，再改个后缀
+
+#### 友元
+
+全局函数类内实现：直接在类内声明友元即可
+
+```C++
+template<class T1, class T2>
+class Person{
+    friend void showPerson(Person<T1,T2> p){
+        cout << "name:" << p.m_name << ",m_age" << p.m_age << endl;
+    }
+public:
+    ... ...
+} //showPerson(p);就可以随时调用了
+```
+
+全局函数类外实现：需要提前让编译器知道全局函数的存在。作为一个普通函数要先加一个模板列表，因此得把实现代码挪到最上方让编译器先了解到这个函数是一个模板函数，又得再前面加一个类声明。真的好麻烦啊……
+
+```C++
+template<class T1, class T2>
+class Person;
+
+template<class T1, class T2>
+void showPerson(Person<T1,T2> p){
+    cout << "name:" << p.m_name << ",m_age" << p.m_age << endl;
+}
+
+template<class T1, class T2>
+class Person{
+    friend void showPerson<>(Person<T1,T2> p);
+public:
+    ... ...
+};
+```
+
+> 所以，别没事找事非得类外实现，类内实现多方便
+
+## STL
+
+### 基本概念
+
+标准模板库
+
+* 容器：各种数据结构，如 vector、 list、 deque、set、map等，用来存放数据
+  * 序列式容器：值排序
+  * 关联式容器：二叉树结构
+* 模板：各种常用的算法，如 sort、find、copy、for_each 等
+* 迭代器：扮演了容器与算法之间的胶合剂。类似指针
+  * 分类：输入、输出、前向、双向、随机访问迭代器
+* 仿函数：行为类似函数，可作为算法的某种策略
+* 适配器（配接器）：一种用来修饰容器或者仿函数或迭代器接口的东西
+* 空间配置器：负责空间的配置与管理
+
+算法：质变算法（改变内容）、非质变算法（不改变内容）
+
+### vector
+
+容器 vector、算法 `for_each`、迭代器 `vector<int>::iterator` 
 
 
 
