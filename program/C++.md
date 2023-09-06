@@ -1,3 +1,7 @@
+> 
+>
+> 
+>
 > 基础直接跳过，从P84开始看，也就是面向对象部分：[01 程序的内存模型-内存四区-代码区._哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1et411b73Z?p=84&vd_source=8e66d0be2e227fad85c74192f79799d6) 
 
 # 面向对象编程
@@ -1617,9 +1621,67 @@ public:
 
 容器 vector、算法 `for_each`、迭代器 `vector<int>::iterator` 
 
+存放固定类型
 
+```C++
+vector<int> v;
+v.push_back(10); //向容器中插入数据,尾插
+v.push_back(11);
 
+//遍历1
+vector<int>::iterator itBegin = v.begin(); //起始迭代器,指向容器中第一个元素
+vector<int>::iterator itEnd = v.end(); //起始迭代器,指向容器中最后一个元素的下一个
+while(itBegin != itEnd){
+	cout << *itBegin << endl;
+	itBegin++;
+}
 
+//遍历2
+for (vector<int>::iterator it = v.begin(); it != v.end(); it++)
+	cout << *it << endl;
+
+//遍历3使用算法for_each
+void vprint(int i){
+	cout << i << endl;
+}
+... ...
+for_each(v.begin(), v.end(),vprint); //需要包含头文件#include<algorithm>,三个参数是起、终、一个函数名因此要自己写个函数
+```
+
+存放自定义类型
+
+```C++
+vector<Person> v;
+Person p1("Alice",18);
+Person p2("Bob", 20);
+v.push_back(p1);
+v.push_back(p2);
+for (vector<Person>::iterator i = v.begin(); i != v.end(); i++)
+	cout << (*i).m_name << endl; //即i->m_name 因为i是一个指针
+```
+
+容器嵌套：跟单层的差不多，多一层嵌套多一个循环而已
+
+```C++
+vector<vector<int>> v;
+vector<int> v1;
+vector<int> v2;
+//装数据
+v1.push_back(11);
+v1.push_back(12);
+v2.push_back(21);
+v2.push_back(22);
+v.push_back(v1);
+v.push_back(v2);
+//嵌套循环遍历
+for (vector<vector<int>>::iterator i = v.begin(); i != v.end(); i++)
+	for (vector<int>::iterator j = (*i).begin(); j != (*i).end(); j++)
+		cout << *j << endl;
+```
+
+### string容器
+
+> 看不下去了，后面感觉跟一个个库学没啥区别，真需要写C++的时候再看吧，卷AI去了……
 
 
 
